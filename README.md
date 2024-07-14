@@ -41,4 +41,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+GNU Affero General Public License v3.0. Read more here: [LICENSE](LICENSE)
