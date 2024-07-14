@@ -63,7 +63,7 @@ def generate():
 
 
 @main.route('/generate_image_to_image', methods=['GET', 'POST'])
-def generate_image_to_image():
+def image_to_image_route():  # Renamed this function
     form = ImageToImageForm()
     if form.validate_on_submit():
         workflow_path = os.path.join(current_app.config['WORKFLOWS_DIR'], 'basic_image_to_image.json')
@@ -81,30 +81,35 @@ def generate_image_to_image():
         input_image.save(filepath)
 
         try:
-            result = generate_image_to_image(
+            image_generator = generate_image_to_image(
                 workflow,
                 filepath,
                 form.positive_prompt.data,
                 form.negative_prompt.data
             )
-            for progress in result:
-                if isinstance(progress, str):
-                    if progress.startswith("Error:"):
-                        logger.error(f"Error during image-to-image generation: {progress}")
-                        return jsonify({'success': False, 'error': progress})
-                    logger.info(f"Generation progress: {progress}")
-                    print(progress)
-                elif isinstance(progress, list) and progress:
-                    output_filename = secure_filename(f"generated_{form.positive_prompt.data[:10]}.png")
-                    output_filepath = os.path.join(current_app.root_path, 'static', 'generated', output_filename)
-                    os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
-                    with open(output_filepath, 'wb') as f:
-                        f.write(progress[0]['image_data'])
-                    logger.info(f"Image-to-image generated successfully: {output_filename}")
-                    return jsonify({'success': True, 'filename': output_filename})
 
-            logger.warning("No image generated")
-            return jsonify({'success': False, 'error': 'No image generated'})
+            generated_images = None
+            for item in image_generator:
+                if isinstance(item, str):
+                    if item.startswith("Error:"):
+                        logger.error(f"Error during image-to-image generation: {item}")
+                        return jsonify({'success': False, 'error': item})
+                    logger.info(f"Generation progress: {item}")
+                    print(item)
+                elif isinstance(item, list):
+                    generated_images = item
+
+            if generated_images and len(generated_images) > 0:
+                output_filename = secure_filename(f"generated_{form.positive_prompt.data[:10]}.png")
+                output_filepath = os.path.join(current_app.root_path, 'static', 'generated', output_filename)
+                os.makedirs(os.path.dirname(output_filepath), exist_ok=True)
+                with open(output_filepath, 'wb') as f:
+                    f.write(generated_images[0]['image_data'])
+                logger.info(f"Image-to-image generated successfully: {output_filename}")
+                return jsonify({'success': True, 'filename': output_filename})
+            else:
+                logger.warning("No image data received from generate_image_to_image function")
+                return jsonify({'success': False, 'error': 'No image data received'})
         except Exception as e:
             logger.exception("Unexpected error during image-to-image generation")
             return jsonify({'success': False, 'error': str(e)})

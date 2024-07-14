@@ -1,12 +1,12 @@
 {
   "3": {
     "inputs": {
-      "seed": 156680208700286,
-      "steps": 22,
+      "seed": 789287273335088,
+      "steps": 20,
       "cfg": 8,
-      "sampler_name": "dpmpp_3m_sde",
+      "sampler_name": "euler_ancestral",
       "scheduler": "karras",
-      "denoise": 0.6,
+      "denoise": 0.8,
       "model": [
         "4",
         0
@@ -31,7 +31,7 @@
   },
   "4": {
     "inputs": {
-      "ckpt_name": "sdXL_v10VAEFix.safetensors"
+      "ckpt_name": "SDXL/juggernautXL_version5.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -40,7 +40,7 @@
   },
   "6": {
     "inputs": {
-      "text": "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
+      "text": "cyberpunk dog",
       "clip": [
         "4",
         1
@@ -95,7 +95,7 @@
   },
   "10": {
     "inputs": {
-      "image": "example.png",
+      "image": "generated_golden_ret.png",
       "upload": "image"
     },
     "class_type": "LoadImage",

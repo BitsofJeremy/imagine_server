@@ -1,15 +1,14 @@
-import websocket
 import json
+import logging
+import random
+import os
+import websocket
 import requests
 import uuid
-import random
-import logging
 from flask import current_app
 from urllib.parse import urlencode
 from requests_toolbelt import MultipartEncoder
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -200,12 +199,23 @@ def generate_image_to_image(workflow, input_path, positive_prompt, negative_prom
         logger.error("LoadImage not found in the workflow")
         raise ValueError("LoadImage not found in the workflow")
 
-    filename = input_path.split('/')[-1]
+    filename = os.path.basename(input_path)
     prompt[image_loader]['inputs']['image'] = filename
 
     logger.info(
         f"Generating image-to-image with input: {input_path}, positive prompt: {positive_prompt}, negative prompt: {negative_prompt}")
-    return generate_image_by_prompt_and_image(prompt, input_path, filename, save_previews)
+
+    image_generator = generate_image_by_prompt_and_image(prompt, input_path, filename, save_previews)
+
+    images = []
+    for item in image_generator:
+        if isinstance(item, str):
+            yield item
+        elif isinstance(item, list):
+            images = item
+
+    logger.info(f"Generated {len(images)} images")
+    yield images
 
 
 def generate_image_by_prompt(prompt, save_previews=False):
@@ -221,18 +231,18 @@ def generate_image_by_prompt(prompt, save_previews=False):
         if prompt_id not in history:
             logger.error(f"No history found for prompt ID: {prompt_id}")
             yield f"Error: No history found for prompt ID: {prompt_id}"
-            yield []  # Yield an empty list to ensure consistent return type
+            yield []
             return
 
         images = get_images_from_history(history[prompt_id], server_address, save_previews)
         if not images:
             logger.warning(f"No images generated for prompt ID: {prompt_id}")
             yield "Warning: No images were generated"
-        yield images  # Always yield the images list, even if it's empty
+        yield images
     except Exception as e:
         logger.error(f"Error in generate_image_by_prompt: {e}")
         yield f"Error: {str(e)}"
-        yield []  # Yield an empty list to ensure consistent return type
+        yield []
     finally:
         ws.close()
 
@@ -250,13 +260,19 @@ def generate_image_by_prompt_and_image(prompt, input_path, filename, save_previe
         history = get_history(prompt_id, server_address)
         if prompt_id not in history:
             logger.error(f"No history found for prompt ID: {prompt_id}")
-            raise ValueError(f"No history found for prompt ID: {prompt_id}")
+            yield f"Error: No history found for prompt ID: {prompt_id}"
+            yield []
+            return
 
         images = get_images_from_history(history[prompt_id], server_address, save_previews)
-        return images
+        if not images:
+            logger.warning(f"No images generated for prompt ID: {prompt_id}")
+            yield "Warning: No images were generated"
+        yield images
     except Exception as e:
         logger.error(f"Error in generate_image_by_prompt_and_image: {e}")
         yield f"Error: {str(e)}"
+        yield []
     finally:
         ws.close()
 
