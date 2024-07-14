@@ -9,13 +9,49 @@ Imagine Server is a Flask-based web application that integrates with ComfyUI to 
 - Mobile-ready design using Bulma CSS
 - WebSocket integration with ComfyUI
 
+## Prerequisites
+
+- Python 3.7+
+- Nginx
+- ComfyUI
+- Git
+
 ## Setup
 
-1. Clone the repository
-2. Install the required packages: `pip install -r requirements.txt`
-3. Set up ComfyUI as a service on your Debian Linux machine
-4. Configure Nginx for both ComfyUI and the Flask application
-5. Run the Flask application: `python run.py`
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/imagine-server.git
+   cd imagine-server
+   ```
+
+2. Create a virtual environment and install dependencies:
+   ```
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. Set up ComfyUI as a service on your Debian Linux machine (see `comfyui.service`)
+
+4. Configure Nginx for both ComfyUI and the Flask application (see `nginx_comfyui.conf` and `nginx_flask.conf`)
+
+5. Set up the Flask application as a service (see `imagineserver.service`)
+
+6. Update the `config.py` file with your settings
+
+## Deployment
+
+1. Make sure you have the `deploy.sh` script in your project root directory and it's executable:
+   ```
+   chmod +x deploy.sh
+   ```
+
+2. Update the configuration variables in `deploy.sh` to match your setup
+
+3. Run the deployment script:
+   ```
+   ./deploy.sh
+   ```
 
 ## Usage
 
@@ -30,10 +66,6 @@ Imagine Server is a Flask-based web application that integrates with ComfyUI to 
 - ComfyUI integration functions are in `app/utils.py`
 - Templates are stored in `app/templates/`
 - Static files (CSS, JS, images) are in `app/static/`
-
-## Deployment
-
-Use the `deploy.sh` script to automate the deployment process.
 
 ## Contributing
 
