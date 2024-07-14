@@ -1,0 +1,14 @@
+[Unit]
+Description=ComfyUI Service
+After=network.target
+
+[Service]
+User=comfyui
+Group=comfyui
+WorkingDirectory=/opt/comfyui
+ExecStart=/opt/comfyui/venv/bin/python main.py
+Restart=always
+Environment="PATH=/opt/comfyui/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" "HOME=/home/comfyui"
+
+[Install]
+WantedBy=multi-user.target
