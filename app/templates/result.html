@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Generated Image</h1>
+<img src="{{ url_for('static', filename='generated/' + filename) }}" alt="Generated Image" class="image">
+<a href="{{ url_for('main.download', filename=filename) }}" class="button is-primary mt-4">Download Image</a>
+<a href="{{ url_for('main.index') }}" class="button is-link mt-4">Generate Another Image</a>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">{% if image_to_image %}Image to Image{% else %}Generate Image{% endif %}</h1>
+<form id="generateForm" method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    {% if image_to_image %}
+    <div class="field">
+        <label class="label">{{ form.input_image.label }}</label>
+        <div class="control">
+            {{ form.input_image(class="input") }}
+        </div>
+    </div>
+    {% endif %}
+    <div class="field">
+        <label class="label">{{ form.positive_prompt.label }}</label>
+        <div class="control">
+            {{ form.positive_prompt(class="textarea") }}
+        </div>
+    </div>
+    <div class="field">
+        <label class="label">{{ form.negative_prompt.label }}</label>
+        <div class="control">
+            {{ form.negative_prompt(class="textarea") }}
+        </div>
+    </div>
+    <div class="field">
+        <div class="control">
+            {{ form.submit(class="button is-primary") }}
+        </div>
+    </div>
+</form>
+
+<div id="progress" class="mt-4" style="display: none;">
+    <progress class="progress is-primary" value="0" max="100"></progress>
+    <p id="progressText"></p>
+</div>
+
+<div id="result" class="mt-4" style="display: none;">
+    <h2 class="subtitle">Generated Image</h2>
+    <img id="generatedImage" src="" alt="Generated Image" class="image">
+    <a id="downloadLink" href="" download class="button is-success mt-2">Download Image</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('generateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var formData = new FormData(this);
+    var progressBar = document.querySelector('#progress progress');
+    var progressText = document.getElementById('progressText');
+    var result = document.getElementById('result');
+
+    document.getElementById('progress').style.display = 'block';
+    result.style.display = 'none';
+
+    axios.post(this.action, formData, {
+        onUploadProgress: function(progressEvent) {
+            var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            progressBar.value = percentCompleted;
+            progressText.textContent = 'Uploading: ' + percentCompleted + '%';
+        }
+    })
+    .then(function(response) {
+        if (response.data.success) {
+            var imageUrl = '/static/generated/' + response.data.filename;
+            document.getElementById('generatedImage').src = imageUrl;
+            document.getElementById('downloadLink').href = '/download/' + response.data.filename;
+            result.style.display = 'block';
+            progressText.textContent = 'Generation complete!';
+        } else {
+            progressText.textContent = 'Error: ' + response.data.error;
+        }
+    })
+    .catch(function(error) {
+        progressText.textContent = 'Error: ' + error.message;
+    });
+});
+</script>
+{% endblock %}
