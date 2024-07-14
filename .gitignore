@@ -1,8 +1,8 @@
 .idea/
 
 # rm generated and uploads from git
-app/static/generated/*
-app/static/uploads/*
+app/static/generated/*.png
+app/static/uploads/*.png
 
  # optimized / DLL files
 __pycache__/
