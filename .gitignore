@@ -3,6 +3,8 @@
 # rm generated and uploads from git
 app/static/generated/*.png
 app/static/uploads/*.png
+app/static/generated/*.jpg
+app/static/uploads/*.jpg
 
  # optimized / DLL files
 __pycache__/
