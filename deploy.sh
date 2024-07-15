@@ -15,6 +15,7 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 USER_NAME="imagineserver"
 USER_HOME="/home/$USER_NAME"
 DOMAIN="imagineserver.home.test"  # Add this line for domain configuration
+PORT=5050
 
 # Function to log messages
 log() {
@@ -82,7 +83,7 @@ After=network.target
 User=$USER_NAME
 Group=$USER_NAME
 WorkingDirectory=$APP_DIR
-ExecStart=$VENV_DIR/bin/gunicorn -w 4 -b 127.0.0.1:5000 run:app
+ExecStart=$VENV_DIR/bin/gunicorn -w 4 -b 127.0.0.1:${PORT} run:app
 Restart=always
 Environment="PATH=$VENV_DIR/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
@@ -104,7 +105,7 @@ server {
     server_name $DOMAIN;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:${PORT};
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
