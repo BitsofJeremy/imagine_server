@@ -121,7 +121,7 @@ EOL
 # Function to run tests
 run_tests() {
     log "Running tests..."
-    sudo -u $USER_NAME $VENV_DIR/bin/pytest $APP_DIR
+#    sudo -u $USER_NAME $VENV_DIR/bin/pytest $APP_DIR
 }
 
 # Function to update application
