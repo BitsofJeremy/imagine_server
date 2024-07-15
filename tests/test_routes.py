@@ -22,7 +22,16 @@ def test_generate_post(mock_generate_image, client):
 
     data = {
         'positive_prompt': 'test positive prompt',
-        'negative_prompt': 'test negative prompt'
+        'negative_prompt': 'test negative prompt',
+        'steps': 20,
+        'cfg': 7.5,
+        'sampler_name': 'euler',
+        'scheduler': 'normal',
+        'denoise': 1,
+        'ckpt_name': 'SD15/cyberrealistic_classicV31.safetensors',
+        'width': 512,
+        'height': 512,
+        'batch_size': 1
     }
     response = client.post(url_for('main.generate'), data=data)
     assert response.status_code == 200
@@ -30,7 +39,7 @@ def test_generate_post(mock_generate_image, client):
     assert 'filename' in response.json
 
 def test_generate_image_to_image_get(client):
-    response = client.get(url_for('main.generate_image_to_image'))
+    response = client.get(url_for('main.image_to_image_route'))
     assert response.status_code == 200
     assert b"Image to Image" in response.data
 
@@ -44,9 +53,16 @@ def test_generate_image_to_image_post(mock_generate_image_to_image, client):
     data = {
         'input_image': (io.BytesIO(b"abcdef"), 'test.jpg'),
         'positive_prompt': 'test positive prompt',
-        'negative_prompt': 'test negative prompt'
+        'negative_prompt': 'test negative prompt',
+        'seed': '-1',
+        'steps': 20,
+        'cfg': 7.5,
+        'sampler_name': 'euler_ancestral',
+        'scheduler': 'karras',
+        'denoise': 0.8,
+        'ckpt_name': 'SDXL/juggernautXL_version5.safetensors'
     }
-    response = client.post(url_for('main.generate_image_to_image'), data=data, content_type='multipart/form-data')
+    response = client.post(url_for('main.image_to_image_route'), data=data, content_type='multipart/form-data')
     assert response.status_code == 200
     assert response.json['success'] == True
     assert 'filename' in response.json

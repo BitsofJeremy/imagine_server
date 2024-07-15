@@ -1,7 +1,8 @@
 import pytest
 import json
 from app.utils import (open_websocket_connection, queue_prompt, get_image,
-                       upload_image, get_history, track_progress, generate_image)
+                       upload_image, get_history, track_progress, generate_image,
+                       generate_image_to_image)
 
 
 def test_open_websocket_connection(app, mock_websocket):
@@ -16,7 +17,7 @@ def test_queue_prompt(app, mock_requests):
     with app.app_context():
         mock_requests.post.return_value.json.return_value = {"prompt_id": "test_id"}
         result = queue_prompt({"test": "prompt"}, "client_id", "server_address")
-        assert result == {"prompt_id": "test_id"}
+        assert result == "test_id"
 
 
 def test_get_image(app, mock_requests):
@@ -26,11 +27,16 @@ def test_get_image(app, mock_requests):
         assert result == b"image_data"
 
 
-def test_upload_image(app, mock_requests):
+def test_upload_image(app, mock_requests, tmp_path):
     with app.app_context():
+        d = tmp_path / "sub"
+        d.mkdir()
+        p = d / "test.jpg"
+        p.write_bytes(b"test image content")
+
         mock_requests.post.return_value.content = b"upload_response"
-        with pytest.raises(FileNotFoundError):
-            upload_image("non_existent_file.png", "name", "server_address")
+        result = upload_image(str(p), "test.jpg", "server_address")
+        assert result == b"upload_response"
 
 
 def test_get_history(app, mock_requests):
@@ -82,4 +88,38 @@ def test_generate_image(workflow, positive_prompt, negative_prompt, mock_websock
     images = next(result)
     assert len(images) == 1
     assert images[0]["file_name"] == "test.png"
+    assert images[0]["image_data"] == b"image_data"
+
+
+def test_generate_image_to_image(mock_websocket, mock_requests, tmp_path):
+    d = tmp_path / "sub"
+    d.mkdir()
+    p = d / "test.jpg"
+    p.write_bytes(b"test image content")
+
+    mock_websocket.recv.side_effect = [
+        json.dumps({"type": "executing", "data": {"node": None, "prompt_id": "test_id"}})
+    ]
+    mock_requests.post.return_value.json.return_value = {"prompt_id": "test_id"}
+    mock_requests.get.return_value.json.return_value = {
+        "test_id": {
+            "outputs": {
+                "1": {
+                    "images": [
+                        {"filename": "test_output.png", "subfolder": "test", "type": "output"}
+                    ]
+                }
+            }
+        }
+    }
+    mock_requests.get.return_value.content = b"image_data"
+
+    workflow = '{"3": {"class_type": "KSampler", "inputs": {}}, "4": {"class_type": "LoadImage", "inputs": {}}}'
+    result = generate_image_to_image(workflow, str(p), "test positive", "test negative")
+    progress = next(result)
+    assert "Progress: 1/1 tasks done" in progress
+
+    images = next(result)
+    assert len(images) == 1
+    assert images[0]["file_name"] == "test_output.png"
     assert images[0]["image_data"] == b"image_data"
