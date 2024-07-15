@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Saved Images</h1>
+
+<h2 class="subtitle">Text to Image</h2>
+<div class="columns is-multiline">
+    {% for image in text_to_image %}
+    <div class="column is-one-quarter">
+        <div class="card">
+            <div class="card-image">
+                <figure class="image is-4by3">
+                    <img src="{{ url_for('static', filename='generated/' + image.filename) }}" alt="{{ image.filename }}">
+                </figure>
+            </div>
+            <div class="card-content">
+                <p class="title is-6">{{ image.filename }}</p>
+                <p class="subtitle is-6">Size: {{ (image.size / 1024)|round(2) }} KB</p>
+                <p class="subtitle is-6">Created: {{ image.created|datetime }}</p>
+            </div>
+            <footer class="card-footer">
+                <a href="{{ url_for('main.download', filename=image.filename) }}" class="card-footer-item">Download</a>
+                <a href="#" class="card-footer-item delete-image" data-filename="{{ image.filename }}">Delete</a>
+            </footer>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<h2 class="subtitle">Image to Image</h2>
+<div class="columns is-multiline">
+    {% for image in image_to_image %}
+    <div class="column is-one-quarter">
+        <div class="card">
+            <div class="card-image">
+                <figure class="image is-4by3">
+                    <img src="{{ url_for('static', filename='generated/' + image.filename) }}" alt="{{ image.filename }}">
+                </figure>
+            </div>
+            <div class="card-content">
+                <p class="title is-6">{{ image.filename }}</p>
+                <p class="subtitle is-6">Size: {{ (image.size / 1024)|round(2) }} KB</p>
+                <p class="subtitle is-6">Created: {{ image.created|datetime }}</p>
+            </div>
+            <footer class="card-footer">
+                <a href="{{ url_for('main.download', filename=image.filename) }}" class="card-footer-item">Download</a>
+                <a href="#" class="card-footer-item delete-image" data-filename="{{ image.filename }}">Delete</a>
+            </footer>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const deleteButtons = document.querySelectorAll('.delete-image');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filename = this.dataset.filename;
+            if (confirm(`Are you sure you want to delete ${filename}?`)) {
+                fetch(`/delete/${filename}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.closest('.column').remove();
+                        } else {
+                            alert('Failed to delete image: ' + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title">{% if image_to_image %}Image to Image{% else %}Generate Image{% endif %}</h1>
+<h1 class="title">{% if image_to_image %}Image to Image Generation{% else %}Text to Image Generation{% endif %}</h1>
 <form id="generateForm" method="post" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
+
     {% if image_to_image %}
     <div class="field">
         <label class="label">{{ form.input_image.label }}</label>
@@ -12,18 +13,120 @@
         </div>
     </div>
     {% endif %}
+
     <div class="field">
         <label class="label">{{ form.positive_prompt.label }}</label>
         <div class="control">
             {{ form.positive_prompt(class="textarea") }}
         </div>
     </div>
+
     <div class="field">
         <label class="label">{{ form.negative_prompt.label }}</label>
         <div class="control">
             {{ form.negative_prompt(class="textarea") }}
         </div>
     </div>
+
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.steps.label }}</label>
+                <div class="control">
+                    {{ form.steps(class="input") }}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.cfg.label }}</label>
+                <div class="control">
+                    {{ form.cfg(class="input") }}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.sampler_name.label }}</label>
+                <div class="control">
+                    <div class="select">
+                        {{ form.sampler_name }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.scheduler.label }}</label>
+                <div class="control">
+                    <div class="select">
+                        {{ form.scheduler }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.denoise.label }}</label>
+                <div class="control">
+                    {{ form.denoise(class="input") }}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.ckpt_name.label }}</label>
+                <div class="control">
+                    <div class="select">
+                        {{ form.ckpt_name }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not image_to_image %}
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.width.label }}</label>
+                <div class="control">
+                    {{ form.width(class="input") }}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.height.label }}</label>
+                <div class="control">
+                    {{ form.height(class="input") }}
+                </div>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">{{ form.batch_size.label }}</label>
+                <div class="control">
+                    {{ form.batch_size(class="input") }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="field">
+    <label class="label">{{ form.seed.label }}</label>
+    <div class="control">
+        {{ form.seed(class="input", type="text", placeholder="-1 for random seed") }}
+    </div>
+    {% if form.seed.errors %}
+    <p class="help is-danger">{{ form.seed.errors[0] }}</p>
+    {% endif %}
+</div>
+    {% endif %}
+
     <div class="field">
         <div class="control">
             {{ form.submit(class="button is-primary") }}

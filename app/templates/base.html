@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Imagine Server{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-mode.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     {% block extra_head %}{% endblock %}
 </head>
@@ -23,6 +24,16 @@
                 <a class="navbar-item" href="{{ url_for('main.image_to_image_route') }}">
                     Image to Image
                 </a>
+                <a class="navbar-item" href="{{ url_for('main.saves') }}">
+                    Saved Images
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <button id="darkModeToggle" class="button">
+                        Toggle Dark Mode
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -43,5 +54,30 @@
     </footer>
 
     {% block scripts %}{% endblock %}
+    <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        const html = document.documentElement;
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            html.classList.add('dark-mode');
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            html.classList.toggle('dark-mode');
+
+            // Save dark mode preference
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+    });
+</script>
 </body>
 </html>

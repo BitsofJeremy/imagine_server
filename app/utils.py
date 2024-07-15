@@ -144,16 +144,49 @@ def track_progress(prompt, ws, prompt_id):
             yield f"Error: {str(e)}"
 
 
-def generate_image(workflow, positive_prompt, negative_prompt='', save_previews=False):
+def generate_image(workflow, positive_prompt, negative_prompt='', steps=20, cfg=8, sampler_name='euler',
+                   scheduler='normal', denoise=1, ckpt_name='SD15/cyberrealistic_classicV31.safetensors',
+                   width=512, height=512, batch_size=1, save_previews=False):
     prompt = json.loads(workflow)
     id_to_class_type = {id: details['class_type'] for id, details in prompt.items()}
-    k_sampler = next((key for key, value in id_to_class_type.items() if value == 'KSampler'), None)
 
+    # Update node #3 (KSampler)
+    k_sampler = next((key for key, value in id_to_class_type.items() if value == 'KSampler'), None)
     if k_sampler is None:
         logger.error("KSampler not found in the workflow")
         raise ValueError("KSampler not found in the workflow")
 
-    prompt[k_sampler]['inputs']['seed'] = random.randint(10 ** 14, 10 ** 15 - 1)
+    prompt[k_sampler]['inputs'].update({
+        'seed': random.randint(10 ** 14, 10 ** 15 - 1),
+        'steps': steps,
+        'cfg': cfg,
+        'sampler_name': sampler_name,
+        'scheduler': scheduler,
+        'denoise': denoise
+    })
+
+    # Update node #4 (CheckpointLoaderSimple)
+    checkpoint_loader = next((key for key, value in id_to_class_type.items() if value == 'CheckpointLoaderSimple'),
+                             None)
+    if checkpoint_loader is None:
+        logger.error("CheckpointLoaderSimple not found in the workflow")
+        raise ValueError("CheckpointLoaderSimple not found in the workflow")
+
+    prompt[checkpoint_loader]['inputs']['ckpt_name'] = ckpt_name
+
+    # Update node #5 (EmptyLatentImage)
+    empty_latent = next((key for key, value in id_to_class_type.items() if value == 'EmptyLatentImage'), None)
+    if empty_latent is None:
+        logger.error("EmptyLatentImage not found in the workflow")
+        raise ValueError("EmptyLatentImage not found in the workflow")
+
+    prompt[empty_latent]['inputs'].update({
+        'width': width,
+        'height': height,
+        'batch_size': batch_size
+    })
+
+    # Update prompts
     positive_input_id = prompt[k_sampler]['inputs']['positive'][0]
     prompt[positive_input_id]['inputs']['text'] = positive_prompt
 
@@ -161,7 +194,10 @@ def generate_image(workflow, positive_prompt, negative_prompt='', save_previews=
         negative_input_id = prompt[k_sampler]['inputs']['negative'][0]
         prompt[negative_input_id]['inputs']['text'] = negative_prompt
 
-    logger.info(f"Generating image with positive prompt: {positive_prompt}, negative prompt: {negative_prompt}")
+    logger.info(
+        f"Generating image with parameters: positive_prompt={positive_prompt}, negative_prompt={negative_prompt}, "
+        f"steps={steps}, cfg={cfg}, sampler_name={sampler_name}, scheduler={scheduler}, denoise={denoise}, "
+        f"ckpt_name={ckpt_name}, width={width}, height={height}, batch_size={batch_size}")
 
     image_generator = generate_image_by_prompt(prompt, save_previews)
 
@@ -176,16 +212,37 @@ def generate_image(workflow, positive_prompt, negative_prompt='', save_previews=
     yield images
 
 
-def generate_image_to_image(workflow, input_path, positive_prompt, negative_prompt='', save_previews=False):
+def generate_image_to_image(workflow, input_path, positive_prompt, negative_prompt='', seed=-1, steps=20, cfg=8,
+                            sampler_name='euler_ancestral', scheduler='karras', denoise=0.8,
+                            ckpt_name='SDXL/juggernautXL_version5.safetensors', save_previews=False):
     prompt = json.loads(workflow)
     id_to_class_type = {id: details['class_type'] for id, details in prompt.items()}
-    k_sampler = next((key for key, value in id_to_class_type.items() if value == 'KSampler'), None)
 
+    # Update node #3 (KSampler)
+    k_sampler = next((key for key, value in id_to_class_type.items() if value == 'KSampler'), None)
     if k_sampler is None:
         logger.error("KSampler not found in the workflow")
         raise ValueError("KSampler not found in the workflow")
 
-    prompt[k_sampler]['inputs']['seed'] = random.randint(10 ** 14, 10 ** 15 - 1)
+    prompt[k_sampler]['inputs'].update({
+        'seed': seed if seed != -1 else random.randint(10 ** 14, 10 ** 15 - 1),
+        'steps': steps,
+        'cfg': cfg,
+        'sampler_name': sampler_name,
+        'scheduler': scheduler,
+        'denoise': denoise
+    })
+
+    # Update node #4 (CheckpointLoaderSimple)
+    checkpoint_loader = next((key for key, value in id_to_class_type.items() if value == 'CheckpointLoaderSimple'),
+                             None)
+    if checkpoint_loader is None:
+        logger.error("CheckpointLoaderSimple not found in the workflow")
+        raise ValueError("CheckpointLoaderSimple not found in the workflow")
+
+    prompt[checkpoint_loader]['inputs']['ckpt_name'] = ckpt_name
+
+    # Update prompts
     positive_input_id = prompt[k_sampler]['inputs']['positive'][0]
     prompt[positive_input_id]['inputs']['text'] = positive_prompt
 
@@ -193,8 +250,8 @@ def generate_image_to_image(workflow, input_path, positive_prompt, negative_prom
         negative_input_id = prompt[k_sampler]['inputs']['negative'][0]
         prompt[negative_input_id]['inputs']['text'] = negative_prompt
 
+    # Update input image
     image_loader = next((key for key, value in id_to_class_type.items() if value == 'LoadImage'), None)
-
     if image_loader is None:
         logger.error("LoadImage not found in the workflow")
         raise ValueError("LoadImage not found in the workflow")
@@ -202,8 +259,10 @@ def generate_image_to_image(workflow, input_path, positive_prompt, negative_prom
     filename = os.path.basename(input_path)
     prompt[image_loader]['inputs']['image'] = filename
 
-    logger.info(
-        f"Generating image-to-image with input: {input_path}, positive prompt: {positive_prompt}, negative prompt: {negative_prompt}")
+    logger.info(f"Generating image-to-image with input: {input_path}, positive prompt: {positive_prompt}, "
+                f"negative prompt: {negative_prompt}, seed: {seed}, steps: {steps}, cfg: {cfg}, "
+                f"sampler_name: {sampler_name}, scheduler: {scheduler}, denoise: {denoise}, "
+                f"ckpt_name: {ckpt_name}")
 
     image_generator = generate_image_by_prompt_and_image(prompt, input_path, filename, save_previews)
 
